@@ -111,6 +111,15 @@
         .user-dropdown a:hover {
             background-color: #f1f1f1;
         }
+        
+        .user-email {
+            color: white;
+            font-weight: 500;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -400,24 +409,27 @@
             databaseURL: "https://vipteammod-movies-default-rtdb.firebaseio.com",
             appId: "1:1024721077525:android:c25e4ab10ec8e4166ad51c"
         };
-
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
-
+        
         // Check auth state and update UI
         auth.onAuthStateChanged((user) => {
             const authSection = document.getElementById('authSection');
             
             if (user) {
                 // User is signed in
+                // Get the user's email and truncate if too long
+                const userEmail = user.email;
+                const truncatedEmail = userEmail.length > 20 ? userEmail.substring(0, 20) + '...' : userEmail;
+                
                 authSection.innerHTML = `
                     <div class="user-menu">
-                        <div class="flex items-center space-x-2 cursor-pointer" onclick="toggleUserMenu()">
+                        <div class="flex items-center space-x-2 cursor-pointer bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-2 rounded-lg transition" onclick="toggleUserMenu()">
                             <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                                <span class="text-white font-semibold">${user.email.charAt(0).toUpperCase()}</span>
+                                <span class="text-white font-semibold">${userEmail.charAt(0).toUpperCase()}</span>
                             </div>
-                            <span style="color:white;" class="hidden md:inline">${user.email}</span>
-                            <i class="fas fa-chevron-down text-xs"></i>
+                            <span class="user-email hidden md:inline" title="${userEmail}">${truncatedEmail}</span>
+                            <i class="fas fa-chevron-down text-xs text-white"></i>
                         </div>
                         <div id="userDropdown" class="user-dropdown">
                             <a href="#"><i class="fas fa-user mr-2"></i> My Profile</a>
@@ -436,13 +448,13 @@
                 `;
             }
         });
-
+        
         // Toggle user dropdown menu
         function toggleUserMenu() {
             const dropdown = document.getElementById('userDropdown');
             dropdown.classList.toggle('show');
         }
-
+        
         // Close dropdown when clicking outside
         window.onclick = function(event) {
             if (!event.target.matches('.user-menu') && !event.target.closest('.user-menu')) {
@@ -452,7 +464,7 @@
                 }
             }
         }
-
+        
         // Handle logout
         function handleLogout() {
             auth.signOut().then(() => {
