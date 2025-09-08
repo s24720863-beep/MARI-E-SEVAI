@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MARI E-SEVAI - Citizen Services Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
+        
+        * {
+            font-family: 'Roboto', sans-serif;
+        }
+        
+        .header-gradient {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
+        }
+        
+        .service-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .certificate-card {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .certificate-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+        
+        .announcement-item {
+            border-left: 4px solid #3b82f6;
+            transition: all 0.3s ease;
+        }
+        
+        .announcement-item:hover {
+            background-color: #f0f9ff;
+        }
+        
+        .tab-active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        .search-box {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        
+        .footer-links a:hover {
+            color: #60a5fa;
+            padding-left: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+            }
+        }
+        
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .department-card {
+            transition: all 0.3s ease;
+        }
+        
+        .department-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .grievance-card {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .grievance-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+        
+        .tender-card {
+            border-left: 4px solid #10b981;
+            transition: all 0.3s ease;
+        }
+        
+        .tender-card:hover {
+            background-color: #f0fdf4;
+        }
+        
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: none;
+            z-index: 1000;
+        }
+        
+        .back-to-top.show {
+            display: block;
+        }
+        
+        .user-dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            margin-top: 5px;
+            width: 200px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            z-index: 1001;
+        }
+        
+        .user-dropdown.show {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="header-gradient text-white shadow-lg sticky-header">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center mb-4 md:mb-0">
+                    <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center mr-3">
+                        <span class="text-blue-800 font-bold text-xl">ME</span>
+                    </div>
+                    <h1 class="text-2xl font-bold">MARI E-SEVAI</h1>
+                    <span class="ml-3 bg-yellow-400 text-blue-900 px-3 py-1 rounded-full text-sm font-semibold">Citizen Services Portal</span>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="hidden md:flex items-center space-x-2">
+                        <i class="fas fa-phone"></i>
+                        <span>1800-425-1234</span>
+                    </div>
+                    <div class="hidden md:flex items-center space-x-2">
+                        <i class="fas fa-envelope"></i>
+                        <span>help@marisevai.gov.in</span>
+                    </div>
+                    
+                    <!-- Login/Register or User Profile Section -->
+                    <div id="authSection" class="relative">
+                        <!-- This will be updated by JavaScript based on auth state -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Navigation -->
+        <nav class="bg-blue-900 bg-opacity-50">
+            <div class="container mx-auto px-4">
+                <ul class="flex flex-wrap justify-center md:justify-start space-x-1 py-2">
+                    <li><a href="#home" class="px-4 py-2 hover:bg-blue-800 rounded transition">Home</a></li>
+                    <li><a href="#services" class="px-4 py-2 hover:bg-blue-800 rounded transition">Services</a></li>
+                    <li><a href="#certificates" class="px-4 py-2 hover:bg-blue-800 rounded transition">Certificates</a></li>
+                    <li><a href="#departments" class="px-4 py-2 hover:bg-blue-800 rounded transition">Departments</a></li>
+                    <li><a href="#payments" class="px-4 py-2 hover:bg-blue-800 rounded transition">Payments</a></li>
+                    <li><a href="#grievance" class="px-4 py-2 hover:bg-blue-800 rounded transition">Grievance</a></li>
+                    <li><a href="#tenders" class="px-4 py-2 hover:bg-blue-800 rounded transition">Tenders</a></li>
+                    <li><a href="#contact" class="px-4 py-2 hover:bg-blue-800 rounded transition">Contact</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section with Search -->
+    <section id="home" class="relative bg-gradient-to-br from-blue-600 to-blue-800 text-white py-16">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-8">
+                <h2 class="text-4xl font-bold mb-4">Welcome to MARI E-SEVAI</h2>
+                <p class="text-xl opacity-90">Your one-stop portal for all government services and certificates</p>
+            </div>
+            
+            <!-- Search Box -->
+            <div class="max-w-3xl mx-auto search-box rounded-lg shadow-2xl p-6">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex-1">
+                        <input type="text" placeholder="Search for services or certificates..." 
+                               class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none text-gray-800">
+                    </div>
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition">
+                        <i class="fas fa-search mr-2"></i>Search
+                    </button>
+                </div>
+                
+                <!-- Quick Links -->
+                <div class="mt-6 flex flex-wrap justify-center gap-3">
+                    <span class="text-gray-600 font-medium">Quick Links:</span>
+                    <a href="birth-certificate.html" class="text-blue-600 hover:text-blue-800 font-medium">Birth Certificate</a>
+                    <a href="income-certificate.html" class="text-blue-600 hover:text-blue-800 font-medium">Income Certificate</a>
+                    <a href="community-certificate.html" class="text-blue-600 hover:text-blue-800 font-medium">Community Certificate</a>
+                    <a href="driving-license.html" class="text-blue-600 hover:text-blue-800 font-medium">Driving License</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Citizen Charter Section -->
+    <section class="py-12 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Citizen Charter</h2>
+            
+            <div class="max-w-4xl mx-auto bg-blue-50 rounded-lg p-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4 text-blue-800">
+                            <i class="fas fa-handshake mr-2"></i>Our Commitment
+                        </h3>
+                        <ul class="space-y-3 text-gray-700">
+                            <li><i class="fas fa-check-circle text-green-500 mr-2"></i>Transparent and efficient service delivery</li>
+                            <li><i class="fas fa-check-circle text-green-500 mr-2"></i>Timely processing of applications</li>
+                            <li><i class="fas fa-check-circle text-green-500 mr-2"></i>Quality service with dignity</li>
+                            <li><i class="fas fa-check-circle text-green-500 mr-2"></i>Confidentiality of citizen information</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4 text-blue-800">
+                            <i class="fas fa-clock mr-2"></i>Service Timelines
+                        </h3>
+                        <ul class="space-y-3 text-gray-700">
+                            <li><i class="fas fa-calendar-alt text-blue-500 mr-2"></i>Birth Certificate: 7 working days</li>
+                            <li><i class="fas fa-calendar-alt text-blue-500 mr-2"></i>Income Certificate: 15 working days</li>
+                            <li><i class="fas fa-calendar-alt text-blue-500 mr-2"></i>Community Certificate: 10 working days</li>
+                            <li><i class="fas fa-calendar-alt text-blue-500 mr-2"></i>Driving License: 30 working days</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="services" class="py-12 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Popular Services</h2>
+            
+            <!-- Service Categories -->
+            <div class="flex flex-wrap justify-center mb-8 gap-2">
+                <button class="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium tab-active" onclick="showServiceCategory('all')">All Services</button>
+                <button class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300" onclick="showServiceCategory('certificate')">Certificates</button>
+                <button class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300" onclick="showServiceCategory('license')">Licenses</button>
+                <button class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300" onclick="showServiceCategory('revenue')">Revenue</button>
+                <button class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300" onclick="showServiceCategory('welfare')">Welfare</button>
+            </div>
+            
+            <!-- Service Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="serviceGrid">
+                <!-- Birth Certificate -->
+                <div class="service-card bg-white p-6 rounded-lg shadow-md border" data-category="certificate">
+                    <div class="text-center mb-4">
+                        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-certificate text-blue-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-800">Birth Certificate</h3>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4">Apply for birth certificate online</p>
+                    <a href="birth-certificate.html" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-medium transition inline-block text-center">
+                        Apply Now
+                    </a>
+                </div>
+                
+                <!-- Death Certificate -->
+                <div class="service-card bg-white p-6 rounded-lg shadow-md border" data-category="certificate">
+                    <div class="text-center mb-4">
+                        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-file-alt text-blue-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-800">Death Certificate</h3>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4">Obtain death certificate online</p>
+                    <a href="death-certificate.html" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-medium transition inline-block text-center">
+                        Apply Now
+                    </a>
+                </div>
+                
+                <!-- Income Certificate -->
+                <div class="service-card bg-white p-6 rounded-lg shadow-md border" data-category="certificate">
+                    <div class="text-center mb-4">
+                        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-money-bill-wave text-blue-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-800">Income Certificate</h3>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4">Apply for income certificate</p>
+                    <a href="income-certificate.html" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-medium transition inline-block text-center">
+                        Apply Now
+                    </a>
+                </div>
+                
+                <!-- Community Certificate -->
+                <div class="service-card bg-white p-6 rounded-lg shadow-md border" data-category="certificate">
+                    <div class="text-center mb-4">
+                        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-users text-blue-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-800">Community Certificate</h3>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4">Get community certificate online</p>
+                    <a href="community-certificate.html" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-medium transition inline-block text-center">
+                        Apply Now
+                    </a>
+                </div>
+                
+                <!-- Driving License -->
+                <div class="service-card bg-white p-6 rounded-lg shadow-md border" data-category="license">
+                    <div class="text-center mb-4">
+                        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-id-card text-blue-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-800">Driving License</h3>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4">Apply for new driving license</p>
+                    <a href="driving-license.html" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-medium transition inline-block text-center">
+                        Apply Now
+                    </a>
+                </div>
+                
+                <!-- Property Tax -->
+                <div class="service-card bg-white p-6 rounded-lg shadow-md border" data-category="revenue">
+                    <div class="text-center mb-4">
+                        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-home text-blue-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-800">Property Tax</h3>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4">Pay property tax online</p>
+                    <a href="#" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-medium transition inline-block text-center">
+                        Pay Now
+                    </a>
+                </div>
+                
+                <!-- Water Tax -->
+                <div class="service-card bg-white p-6 rounded-lg shadow-md border" data-category="revenue">
+                    <div class="text-center mb-4">
+                        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-tint text-blue-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-800">Water Tax</h3>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4">Pay water tax online</p>
+                    <a href="#" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-medium transition inline-block text-center">
+                        Pay Now
+                    </a>
+                </div>
+                
+                <!-- Social Welfare -->
+                <div class="service-card bg-white p-6 rounded-lg shadow-md border" data-category="welfare">
+                    <div class="text-center mb-4">
+                        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-hands-helping text-blue-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-800">Social Welfare</h3>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4">Apply for welfare schemes</p>
+                    <a href="#" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-medium transition inline-block text-center">
+                        Apply Now
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Certificate Applications Section -->
+    <section id="certificates" class="py-12 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Certificate Applications</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Birth Certificate Application -->
+                <div class="certificate-card p-6 rounded-lg shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-baby text-white text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-800">Birth Certificate</h3>
+                    </div>
+                    <ul class="space-y-2 text-gray-600 mb-4">
+                        <li><i class="fas fa-check text-green-500 mr-2"></i>Apply for new birth certificate</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i>Correction in birth certificate</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i>Duplicate certificate</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i>Name inclusion</li>
+                    </ul>
+                    <a href="birth-certificate.html" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-medium transition inline-block text-center">
+                        Apply for Birth Certificate
+                    </a>
+                </div>
+                
+                <!-- Income Certificate Application -->
+                <div class="certificate-card p-6 rounded-lg shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-chart-line text-white text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-800">Income Certificate</h3>
+                    </div>
+                    <ul class="space-y-2 text-gray-600 mb-4">
+                        <li><i class="fas fa-check text-green-500 mr-2"></i>Apply for income certificate</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i>Renewal of certificate</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i>Income verification</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i>Track application status</li>
+                    </ul>
+                    <a href="income-certificate.html" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-md font-medium transition inline-block text-center">
+                        Apply for Income Certificate
+                    </a>
+                </div>
+                
+                <!-- Community Certificate Application -->
+                <div class="certificate-card p-6 rounded-lg shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-users text-white text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-800">Community Certificate</h3>
+                    </div>
+                    <ul class="space-y-2 text-gray-600 mb-4">
+                        <li><i class="fas fa-check text-green-500 mr-2"></i>Apply for community certificate</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i>Caste certificate</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i>Religion certificate</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i>Download certificate</li>
+                    </ul>
+                    <a href="community-certificate.html" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-md font-medium transition inline-block text-center">
+                        Apply for Community Certificate
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Departments Section -->
+    <section id="departments" class="py-12 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Department Services</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Revenue Department -->
+                <div class="department-card bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-landmark text-red-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-800">Revenue Department</h3>
+                    </div>
+                    <ul class="space-y-2 text-gray-600">
+                        <li><i class="fas fa-angle-right text-red-500 mr-2"></i>Land Records</li>
+                        <li><i class="fas fa-angle-right text-red-500 mr-2"></i>Property Registration</li>
+                        <li><i class="fas fa-angle-right text-red-500 mr-2"></i>Encumbrance Certificate</li>
+                        <li><i class="fas fa-angle-right text-red-500 mr-2"></i>Land Tax Payment</li>
+                    </ul>
+                    <button class="mt-4 text-red-600 font-medium hover:text-red-800">
+                        View All Services <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+                
+                <!-- Health Department -->
+                <div class="department-card bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-heartbeat text-green-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-800">Health Department</h3>
+                    </div>
+                    <ul class="space-y-2 text-gray-600">
+                        <li><i class="fas fa-angle-right text-green-500 mr-2"></i>Birth/Death Registration</li>
+                        <li><i class="fas fa-angle-right text-green-500 mr-2"></i>Health Cards</li>
+                        <li><i class="fas fa-angle-right text-green-500 mr-2"></i>Ambulance Services</li>
+                        <li><i class="fas fa-angle-right text-green-500 mr-2"></i>Hospital Appointments</li>
+                    </ul>
+                    <button class="mt-4 text-green-600 font-medium hover:text-green-800">
+                        View All Services <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+                
+                <!-- Transport Department -->
+                <div class="department-card bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-bus text-blue-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-800">Transport Department</h3>
+                    </div>
+                    <ul class="space-y-2 text-gray-600">
+                        <li><i class="fas fa-angle-right text-blue-500 mr-2"></i>Driving License</li>
+                        <li><i class="fas fa-angle-right text-blue-500 mr-2"></i>Vehicle Registration</li>
+                        <li><i class="fas fa-angle-right text-blue-500 mr-2"></i>Permit Applications</li>
+                        <li><i class="fas fa-angle-right text-blue-500 mr-2"></i>Tax Payment</li>
+                    </ul>
+                    <button class="mt-4 text-blue-600 font-medium hover:text-blue-800">
+                        View All Services <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+                
+                <!-- Education Department -->
+                <div class="department-card bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-graduation-cap text-purple-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-800">Education Department</h3>
+                    </div>
+                    <ul class="space-y-2 text-gray-600">
+                        <li><i class="fas fa-angle-right text-purple-500 mr-2"></i>Scholarship Applications</li>
+                        <li><i class="fas fa-angle-right text-purple-500 mr-2"></i>Bonafide Certificates</li>
+                        <li><i class="fas fa-angle-right text-purple-500 mr-2"></i>Transfer Certificates</li>
+                        <li><i class="fas fa-angle-right text-purple-500 mr-2"></i>Exam Results</li>
+                    </ul>
+                    <button class="mt-4 text-purple-600 font-medium hover:text-purple-800">
+                        View All Services <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+                
+                <!-- Municipal Administration -->
+                <div class="department-card bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-city text-yellow-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-800">Municipal Administration</h3>
+                    </div>
+                    <ul class="space-y-2 text-gray-600">
+                        <li><i class="fas fa-angle-right text-yellow-500 mr-2"></i>Property Tax</li>
+                        <li><i class="fas fa-angle-right text-yellow-500 mr-2"></i>Water Tax</li>
+                        <li><i class="fas fa-angle-right text-yellow-500 mr-2"></i>Trade License</li>
+                        <li><i class="fas fa-angle-right text-yellow-500 mr-2"></i>Building Permissions</li>
+                    </ul>
+                    <button class="mt-4 text-yellow-600 font-medium hover:text-yellow-800">
+                        View All Services <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+                
+                <!-- Social Welfare -->
+                <div class="department-card bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-hands-helping text-pink-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-800">Social Welfare</h3>
+                    </div>
+                    <ul class="space-y-2 text-gray-600">
+                        <li><i class="fas fa-angle-right text-pink-500 mr-2"></i>Pension Schemes</li>
+                        <li><i class="fas fa-angle-right text-pink-500 mr-2"></i>Widow Assistance</li>
+                        <li><i class="fas fa-angle-right text-pink-500 mr-2"></i>Disability Benefits</li>
+                        <li><i class="fas fa-angle-right text-pink-500 mr-2"></i>Marriage Assistance</li>
+                    </ul>
+                    <button class="mt-4 text-pink-600 font-medium hover:text-pink-800">
+                        View All Services <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Forms Download Section -->
+    <section class="py-12 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Forms Download</h2>
+            
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-gray-50 rounded-lg p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4 text-gray-800">Certificate Forms</h3>
+                            <ul class="space-y-3">
+                                <li class="flex justify-between items-center p-3 bg-white rounded hover:bg-gray-100">
+                                    <span class="text-gray-700">Birth Certificate Application</span>
+                                    <a href="#" class="text-blue-600 hover:text-blue-800">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </li>
+                                <li class="flex justify-between items-center p-3 bg-white rounded hover:bg-gray-100">
+                                    <span class="text-gray-700">Death Certificate Application</span>
+                                    <a href="#" class="text-blue-600 hover:text-blue-800">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </li>
+                                <li class="flex justify-between items-center p-3 bg-white rounded hover:bg-gray-100">
+                                    <span class="text-gray-700">Income Certificate Application</span>
+                                    <a href="#" class="text-blue-600 hover:text-blue-800">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </li>
+                                <li class="flex justify-between items-center p-3 bg-white rounded hover:bg-gray-100">
+                                    <span class="text-gray-700">Community Certificate Application</span>
+                                    <a href="#" class="text-blue-600 hover:text-blue-800">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4 text-gray-800">Other Forms</h3>
+                            <ul class="space-y-3">
+                                <li class="flex justify-between items-center p-3 bg-white rounded hover:bg-gray-100">
+                                    <span class="text-gray-700">Grievance Registration Form</span>
+                                    <a href="#" class="text-blue-600 hover:text-blue-800">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </li>
+                                <li class="flex justify-between items-center p-3 bg-white rounded hover:bg-gray-100">
+                                    <span class="text-gray-700">RTI Application Form</span>
+                                    <a href="#" class="text-blue-600 hover:text-blue-800">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </li>
+                                <li class="flex justify-between items-center p-3 bg-white rounded hover:bg-gray-100">
+                                    <span class="text-gray-700">Property Tax Appeal Form</span>
+                                    <a href="#" class="text-blue-600 hover:text-blue-800">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </li>
+                                <li class="flex justify-between items-center p-3 bg-white rounded hover:bg-gray-100">
+                                    <span class="text-gray-700">Building Permission Form</span>
+                                    <a href="#" class="text-blue-600 hover:text-blue-800">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Fee Structure Section -->
+    <section class="py-12 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Fee Structure</h2>
+            
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-blue-600 text-white">
+                            <tr>
+                                <th class="px-6 py-3 text-left">Service</th>
+                                <th class="px-6 py-3 text-left">Fee (₹)</th>
+                                <th class="px-6 py-3 text-left">Processing Time</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">Birth Certificate</td>
+                                <td class="px-6 py-4">50</td>
+                                <td class="px-6 py-4">7 working days</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">Death Certificate</td>
+                                <td class="px-6 py-4">50</td>
+                                <td class="px-6 py-4">7 working days</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">Income Certificate</td>
+                                <td class="px-6 py-4">100</td>
+                                <td class="px-6 py-4">15 working days</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">Community Certificate</td>
+                                <td class="px-6 py-4">75</td>
+                                <td class="px-6 py-4">10 working days</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">Driving License (New)</td>
+                                <td class="px-6 py-4">750</td>
+                                <td class="px-6 py-4">30 working days</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">Property Tax</td>
+                                <td class="px-6 py-4">As per assessment</td>
+                                <td class="px-6 py-4">Instant</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Grievance Redressal Section -->
+    <section id="grievance" class="py-12 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Grievance Redressal</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="grievance-card p-8 rounded-lg shadow-md">
+                    <h3 class="text-2xl font-semibold mb-6 text-gray-800">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 mr-3"></i>
+                        Register Your Grievance
+                    </h3>
+                    <p class="text-gray-700 mb-6">If you have any complaints or issues regarding our services, please register your grievance here. We will address it promptly.</p>
+                    
+                    <form class="space-y-4">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">Name</label>
+                            <input type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">Email</label>
+                            <input type="email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">Mobile</label>
+                            <input type="tel" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">Grievance Type</label>
+                            <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none">
+                                <option>Service Related</option>
+                                <option>Payment Issue</option>
+                                <option>Certificate Issue</option>
+                                <option>Staff Behavior</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">Description</label>
+                            <textarea rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none resize-none"></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-3 rounded-lg font-semibold transition">
+                            Submit Grievance
+                        </button>
+                    </form>
+                </div>
+                
+                <div>
+                    <h3 class="text-2xl font-semibold mb-6 text-gray-800">
+                        <i class="fas fa-headset text-blue-600 mr-3"></i>
+                        Helpline Numbers
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-blue-50 p-6 rounded-lg">
+                            <h4 class="font-semibold text-gray-800 mb-2">General Helpline</h4>
+                            <p class="text-2xl font-bold text-blue-600">1800-425-1234</p>
+                            <p class="text-gray-600 text-sm mt-1">Available 24/7</p>
+                        </div>
+                        
+                        <div class="bg-green-50 p-6 rounded-lg">
+                            <h4 class="font-semibold text-gray-800 mb-2">Certificate Support</h4>
+                            <p class="text-2xl font-bold text-green-600">1800-425-5678</p>
+                            <p class="text-gray-600 text-sm mt-1">Mon-Fri: 9AM-6PM</p>
+                        </div>
+                        
+                        <div class="bg-purple-50 p-6 rounded-lg">
+                            <h4 class="font-semibold text-gray-800 mb-2">Payment Support</h4>
+                            <p class="text-2xl font-bold text-purple-600">1800-425-9012</p>
+                            <p class="text-gray-600 text-sm mt-1">Mon-Sat: 9AM-8PM</p>
+                        </div>
+                        
+                        <div class="bg-red-50 p-6 rounded-lg">
+                            <h4 class="font-semibold text-gray-800 mb-2">Emergency Support</h4>
+                            <p class="text-2xl font-bold text-red-600">1800-425-3456</p>
+                            <p class="text-gray-600 text-sm mt-1">Available 24/7</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tenders Section -->
+    <section id="tenders" class="py-12 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Latest Tenders</h2>
+            
+            <div class="max-w-4xl mx-auto space-y-4">
+                <div class="tender-card bg-white p-6 rounded-lg shadow-md pl-6">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-semibold text-gray-800">Supply of Computer Equipment for E-Sevai Centers</h4>
+                            <p class="text-gray-600 text-sm mt-1">Tender Reference: ME/2024/001 | Department: IT</p>
+                            <div class="flex items-center mt-2 text-sm text-gray-500">
+                                <i class="fas fa-calendar-alt mr-2"></i>
+                                <span>Last Date: 15 June 2024</span>
+                                <i class="fas fa-money-bill-wave ml-4 mr-2"></i>
+                                <span>Estimated Cost: ₹50,00,000</span>
+                            </div>
+                        </div>
+                        <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition">
+                            View Details
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="tender-card bg-white p-6 rounded-lg shadow-md pl-6">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-semibold text-gray-800">Construction of New E-Sevai Building</h4>
+                            <p class="text-gray-600 text-sm mt-1">Tender Reference: ME/2024/002 | Department: PWD</p>
+                            <div class="flex items-center mt-2 text-sm text-gray-500">
+                                <i class="fas fa-calendar-alt mr-2"></i>
+                                <span>Last Date: 30 June 2024</span>
+                                <i class="fas fa-money-bill-wave ml-4 mr-2"></i>
+                                <span>Estimated Cost: ₹2,00,00,000</span>
+                            </div>
+                        </div>
+                        <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition">
+                            View Details
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="tender-card bg-white p-6 rounded-lg shadow-md pl-6">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-semibold text-gray-800">Annual Maintenance Contract for IT Infrastructure</h4>
+                            <p class="text-gray-600 text-sm mt-1">Tender Reference: ME/2024/003 | Department: IT</p>
+                            <div class="flex items-center mt-2 text-sm text-gray-500">
+                                <i class="fas fa-calendar-alt mr-2"></i>
+                                <span>Last Date: 20 June 2024</span>
+                                <i class="fas fa-money-bill-wave ml-4 mr-2"></i>
+                                <span>Estimated Cost: ₹25,00,000</span>
+                            </div>
+                        </div>
+                        <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition">
+                            View Details
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Statistics Section -->
+    <section class="py-12 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Portal Statistics</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div class="text-center">
+                    <div class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-3xl font-bold text-blue-600">2.5M</span>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800">Total Users</h3>
+                    <p class="text-gray-600">Registered citizens</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-3xl font-bold text-green-600">5.8M</span>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800">Services Delivered</h3>
+                    <p class="text-gray-600">Since inception</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="w-24 h-24 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-3xl font-bold text-purple-600">98%</span>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800">Satisfaction Rate</h3>
+                    <p class="text-gray-600">User feedback</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="w-24 h-24 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-3xl font-bold text-yellow-600">24/7</span>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800">Support Available</h3>
+                    <p class="text-gray-600">Round the clock</p>
+                </div>
+            </div>
+            
+            <!-- Chart -->
+            <div class="max-w-4xl mx-auto">
+                <canvas id="servicesChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- RTI Section -->
+    <section class="py-12 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Right to Information (RTI)</h2>
+            
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-white rounded-lg shadow-md p-8">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-800">RTI Act 2005</h3>
+                    <p class="text-gray-700 mb-6">
+                        The Right to Information Act, 2005 empowers the citizens to seek information from public authorities. 
+                        MARI E-SEVAI is committed to transparency and provides easy access to information under RTI.
+                    </p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-semibold mb-3 text-gray-800">RTI Applications</h4>
+                            <ul class="space-y-2 text-gray-600">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Submit RTI application online</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Track application status</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Download RTI forms</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>View RTI responses</li>
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-semibold mb-3 text-gray-800">Public Information Officer</h4>
+                            <ul class="space-y-2 text-gray-600">
+                                <li><i class="fas fa-user text-blue-500 mr-2"></i>Name: R. Kumar</li>
+                                <li><i class="fas fa-phone text-blue-500 mr-2"></i>Phone: 044-28520123</li>
+                                <li><i class="fas fa-envelope text-blue-500 mr-2"></i>Email: rti@marisevai.gov.in</li>
+                                <li><i class="fas fa-map-marker-alt text-blue-500 mr-2"></i>Address: E-Sevai Center, Chennai</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 flex flex-col sm:flex-row gap-4">
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition">
+                            <i class="fas fa-file-alt mr-2"></i>Submit RTI Application
+                        </button>
+                        <button class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition">
+                            <i class="fas fa-download mr-2"></i>Download RTI Form
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Important Links Section -->
+    <section class="py-12 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Important Links</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-gray-50 p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-800">Government Portals</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-blue-600 hover:text-blue-800">Government of India</a></li>
+                        <li><a href="#" class="text-blue-600 hover:text-blue-800">State Government Portal</a></li>
+                        <li><a href="#" class="text-blue-600 hover:text-blue-800">Digital India</a></li>
+                        <li><a href="#" class="text-blue-600 hover:text-blue-800">MyGov</a></li>
+                    </ul>
+                </div>
+                
+                <div class="bg-gray-50 p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-800">Services</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-blue-600 hover:text-blue-800">Aadhaar Services</a></li>
+                        <li><a href="#" class="text-blue-600 hover:text-blue-800">PAN Services</a></li>
+                        <li><a href="#" class="text-blue-600 hover:text-blue-800">Passport Seva</a></li>
+                        <li><a href="#" class="text-blue-600 hover:text-blue-800">Income Tax</a></li>
+                    </ul>
+                </div>
+                
+                <div class="bg-gray-50 p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-800">Other Resources</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-blue-600 hover:text-blue-800">Citizen Charter</a></li>
+                        <li><a href="#" class="text-blue-600 hover:text-blue-800">FAQs</a></li>
+                        <li><a href="#" class="text-blue-600 hover:text-blue-800">User Manuals</a></li>
+                        <li><a href="#" class="text-blue-600 hover:text-blue-800">Video Tutorials</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="contact" class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center mb-4">
+                        <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+                            <span class="text-white font-bold text-lg">ME</span>
+                        </div>
+                        <h3 class="text-xl font-bold">MARI E-SEVAI</h3>
+                    </div>
+                    <p class="text-gray-400 mb-4">Your trusted portal for government services and certificates.</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
+                    <ul class="footer-links space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition">Home</a></li>
+                        <li><a href="#" class="hover:text-white transition">About Us</a></li>
+                        <li><a href="#" class="hover:text-white transition">Services</a></li>
+                        <li><a href="#" class="hover:text-white transition">FAQs</a></li>
+                        <li><a href="#" class="hover:text-white transition">Contact</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Popular Services</h4>
+                    <ul class="footer-links space-y-2 text-gray-400">
+                        <li><a href="birth-certificate.html" class="hover:text-white transition">Birth Certificate</a></li>
+                        <li><a href="death-certificate.html" class="hover:text-white transition">Death Certificate</a></li>
+                        <li><a href="income-certificate.html" class="hover:text-white transition">Income Certificate</a></li>
+                        <li><a href="community-certificate.html" class="hover:text-white transition">Community Certificate</a></li>
+                        <li><a href="driving-license.html" class="hover:text-white transition">Driving License</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Contact Us</h4>
+                    <ul class="space-y-3 text-gray-400">
+                        <li class="flex items-start">
+                            <i class="fas fa-map-marker-alt mt-1 mr-3"></i>
+                            <span>E-Sevai Center, Government Complex, Chennai - 600001</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-phone mr-3"></i>
+                            <span>1800-425-1234</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-envelope mr-3"></i>
+                            <span>help@marisevai.gov.in</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-clock mr-3"></i>
+                            <span>Mon-Fri: 9:00 AM - 6:00 PM</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-10 pt-6 text-center text-gray-400">
+                <p>&copy; 2024 MARI E-SEVAI. All rights reserved. | Designed and Developed by Government of Tamil Nadu</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Back to Top Button -->
+    <button id="backToTop" class="back-to-top bg-blue-600 hover:bg-blue-700 text-white w-12 h-12 rounded-full shadow-lg transition">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyANmru4_kH0eDNgDFURF5aZTaiPgaQ4avU",
+            authDomain: "vipteammod-movies.firebaseapp.com",
+            projectId: "vipteammod-movies",
+            databaseURL: "https://vipteammod-movies-default-rtdb.firebaseio.com",
+            appId: "1:1024721077525:android:c25e4ab10ec8e4166ad51c"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // Update UI based on auth state
+        function updateUI(user) {
+            const authSection = document.getElementById('authSection');
+            
+            if (user) {
+                // User is signed in
+                const userEmail = user.email;
+                
+                authSection.innerHTML = `
+                    <div class="relative">
+                        <button onclick="toggleUserDropdown()" class="flex items-center bg-white text-blue-800 px-4 py-2 rounded-md font-semibold hover:bg-blue-100 transition">
+                            <i class="fas fa-user-circle mr-2"></i>
+                            <span class="truncate max-w-xs">${userEmail}</span>
+                            <i class="fas fa-chevron-down ml-2"></i>
+                        </button>
+                        <div id="userDropdown" class="user-dropdown">
+                            <a href="#" class="block px-4 py-3 text-gray-800 hover:bg-blue-50 transition">
+                                <i class="fas fa-user mr-2"></i> My Profile
+                            </a>
+                            <a href="#" class="block px-4 py-3 text-gray-800 hover:bg-blue-50 transition">
+                                <i class="fas fa-file-alt mr-2"></i> My Applications
+                            </a>
+                            <a href="#" class="block px-4 py-3 text-gray-800 hover:bg-blue-50 transition">
+                                <i class="fas fa-cog mr-2"></i> Settings
+                            </a>
+                            <div class="border-t border-gray-200 my-1"></div>
+                            <a href="#" onclick="logout()" class="block px-4 py-3 text-red-600 hover:bg-red-50 transition">
+                                <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // User is signed out
+                authSection.innerHTML = `
+                    <a href="login.html" class="bg-white text-blue-800 px-4 py-2 rounded-md font-semibold hover:bg-blue-100 transition">
+                        <i class="fas fa-user mr-2"></i>Login / Register
+                    </a>
+                `;
+            }
+        }
+
+        // Toggle user dropdown
+        function toggleUserDropdown() {
+            const dropdown = document.getElementById('userDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const authSection = document.getElementById('authSection');
+            const dropdown = document.getElementById('userDropdown');
+            
+            if (!authSection.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+
+        // Logout function
+        function logout() {
+            auth.signOut().then(() => {
+                // Sign-out successful
+                window.location.reload();
+            }).catch((error) => {
+                // An error happened
+                console.error('Logout error:', error);
+            });
+        }
+
+        // Listen for auth state changes
+        auth.onAuthStateChanged(user => {
+            updateUI(user);
+        });
+
+        // Service category filter
+        function showServiceCategory(category) {
+            // Update active tab
+            const tabs = document.querySelectorAll('.flex.flex-wrap.justify-center.mb-8.gap-2 button');
+            tabs.forEach(tab => {
+                tab.classList.remove('tab-active', 'bg-blue-600', 'text-white');
+                tab.classList.add('bg-gray-200', 'text-gray-700');
+            });
+            event.target.classList.remove('bg-gray-200', 'text-gray-700');
+            event.target.classList.add('tab-active', 'bg-blue-600', 'text-white');
+            
+            // Filter service cards
+            const cards = document.querySelectorAll('#serviceGrid > div');
+            cards.forEach(card => {
+                if (category === 'all' || card.getAttribute('data-category') === category) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+        
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+        
+        // Back to top button
+        const backToTopButton = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('show');
+            } else {
+                backToTopButton.classList.remove('show');
+            }
+        });
+        
+        backToTopButton.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+        
+        // Initialize Chart
+        const ctx = document.getElementById('servicesChart').getContext('2d');
+        const servicesChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Birth Certificate', 'Income Certificate', 'Community Certificate', 'Driving License', 'Property Tax', 'Other Services'],
+                datasets: [{
+                    label: 'Services Delivered (in thousands)',
+                    data: [850, 620, 780, 450, 920, 380],
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.8)',
+                        'rgba(16, 185, 129, 0.8)',
+                        'rgba(139, 92, 246, 0.8)',
+                        'rgba(245, 158, 11, 0.8)',
+                        'rgba(239, 68, 68, 0.8)',
+                        'rgba(107, 114, 128, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(59, 130, 246, 1)',
+                        'rgba(16, 185, 129, 1)',
+                        'rgba(139, 92, 246, 1)',
+                        'rgba(245, 158, 11, 1)',
+                        'rgba(239, 68, 68, 1)',
+                        'rgba(107, 114, 128, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Monthly Services Delivered',
+                        font: {
+                            size: 18
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+
