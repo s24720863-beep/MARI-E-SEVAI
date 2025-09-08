@@ -80,10 +80,6 @@
             z-index: 1000;
         }
         
-        .user-menu {
-            position: relative;
-        }
-        
         .user-dropdown {
             display: none;
             position: absolute;
@@ -436,30 +432,38 @@
             databaseURL: "https://vipteammod-movies-default-rtdb.firebaseio.com",
             appId: "1:1024721077525:android:c25e4ab10ec8e4166ad51c"
         };
-
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
-
+        
         // Check auth state and update UI
         auth.onAuthStateChanged((user) => {
             const authSection = document.getElementById('authSection');
             
             if (user) {
                 // User is signed in
+                const userEmail = user.email;
+                
                 authSection.innerHTML = `
-                    <div class="user-menu">
-                        <div class="flex items-center space-x-2 cursor-pointer" onclick="toggleUserMenu()">
-                            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                                <span class="text-white font-semibold">${user.email.charAt(0).toUpperCase()}</span>
-                            </div>
-                            <span style="color:white;" class="hidden md:inline">${user.email}</span>
-                            <i class="fas fa-chevron-down text-xs"></i>
-                        </div>
+                    <div class="relative">
+                        <button onclick="toggleUserDropdown()" class="flex items-center bg-white text-blue-800 px-4 py-2 rounded-md font-semibold hover:bg-blue-100 transition">
+                            <i class="fas fa-user-circle mr-2"></i>
+                            <span class="truncate max-w-xs">${userEmail}</span>
+                            <i class="fas fa-chevron-down ml-2"></i>
+                        </button>
                         <div id="userDropdown" class="user-dropdown">
-                            <a href="#"><i class="fas fa-user mr-2"></i> My Profile</a>
-                            <a href="#"><i class="fas fa-file-alt mr-2"></i> My Applications</a>
-                            <a href="#"><i class="fas fa-cog mr-2"></i> Settings</a>
-                            <a href="#" onclick="handleLogout()"><i class="fas fa-sign-out-alt mr-2"></i> Logout</a>
+                            <a href="#" class="block px-4 py-3 text-gray-800 hover:bg-blue-50 transition">
+                                <i class="fas fa-user mr-2"></i> My Profile
+                            </a>
+                            <a href="#" class="block px-4 py-3 text-gray-800 hover:bg-blue-50 transition">
+                                <i class="fas fa-file-alt mr-2"></i> My Applications
+                            </a>
+                            <a href="#" class="block px-4 py-3 text-gray-800 hover:bg-blue-50 transition">
+                                <i class="fas fa-cog mr-2"></i> Settings
+                            </a>
+                            <div class="border-t border-gray-200 my-1"></div>
+                            <a href="#" onclick="logout()" class="block px-4 py-3 text-red-600 hover:bg-red-50 transition">
+                                <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                            </a>
                         </div>
                     </div>
                 `;
@@ -472,25 +476,25 @@
                 `;
             }
         });
-
+        
         // Toggle user dropdown menu
-        function toggleUserMenu() {
+        function toggleUserDropdown() {
             const dropdown = document.getElementById('userDropdown');
             dropdown.classList.toggle('show');
         }
-
+        
         // Close dropdown when clicking outside
         window.onclick = function(event) {
-            if (!event.target.matches('.user-menu') && !event.target.closest('.user-menu')) {
+            if (!event.target.matches('.relative') && !event.target.closest('.relative')) {
                 const dropdown = document.getElementById('userDropdown');
                 if (dropdown.classList.contains('show')) {
                     dropdown.classList.remove('show');
                 }
             }
         }
-
+        
         // Handle logout
-        function handleLogout() {
+        function logout() {
             auth.signOut().then(() => {
                 // Sign-out successful
                 window.location.reload();
