@@ -144,6 +144,19 @@
         .loading-spinner.show {
             display: flex;
         }
+        
+        .debug-info {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            max-width: 300px;
+            z-index: 10000;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -152,7 +165,13 @@
         <div class="text-center">
             <div class="w-16 h-16 border-t-4 border-blue-600 border-solid rounded-full animate-spin mx-auto"></div>
             <p class="mt-4 text-lg font-medium">Submitting your application...</p>
+            <p id="loadingStatus" class="text-sm text-gray-600 mt-2">Please wait</p>
         </div>
+    </div>
+    
+    <!-- Debug Info (for development) -->
+    <div id="debugInfo" class="debug-info" style="display: none;">
+        <div id="debugContent"></div>
     </div>
     
     <!-- Header -->
@@ -516,20 +535,40 @@
             authDomain: "vipteammod-movies.firebaseapp.com",
             projectId: "vipteammod-movies",
             databaseURL: "https://vipteammod-movies-default-rtdb.firebaseio.com",
-            appId: "1:1024721077525:android:c25e4ab10ec8e4166ad51c"
+            appId: "1:1024721077525:android:c25e4ab10ec8e4166ad51c",
+            storageBucket: "vipteammod-movies.appspot.com" // Added storage bucket
         };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const database = firebase.database();
         const storage = firebase.storage();
         
+        // Debug mode - set to true to see debug information
+        const DEBUG_MODE = true;
+        
+        // Debug logging function
+        function debugLog(message) {
+            if (DEBUG_MODE) {
+                console.log(message);
+                const debugInfo = document.getElementById('debugInfo');
+                const debugContent = document.getElementById('debugContent');
+                if (debugInfo && debugContent) {
+                    debugInfo.style.display = 'block';
+                    debugContent.innerHTML += '<br>' + new Date().toLocaleTimeString() + ': ' + message;
+                }
+            }
+        }
+        
         // Check auth state and update UI
         auth.onAuthStateChanged((user) => {
+            debugLog('Auth state changed: ' + (user ? 'User logged in' : 'User logged out'));
+            
             const authSection = document.getElementById('authSection');
             
             if (user) {
                 // User is signed in
                 const userEmail = user.email;
+                debugLog('User email: ' + userEmail);
                 
                 authSection.innerHTML = `
                     <div class="relative">
@@ -566,6 +605,7 @@
                 // Redirect to login if not authenticated
                 setTimeout(() => {
                     if (!auth.currentUser) {
+                        debugLog('Redirecting to login page');
                         window.location.href = "login.html";
                     }
                 }, 1000);
@@ -602,10 +642,12 @@
         // Handle Birth Certificate form submission
         document.getElementById('birthCertificateForm').addEventListener('submit', function(event) {
             event.preventDefault();
+            debugLog('Form submitted');
             
             // Check if user is logged in
             const user = auth.currentUser;
             if (!user) {
+                debugLog('User not logged in, redirecting to login');
                 alert('Please login to submit your application');
                 window.location.href = 'login.html';
                 return;
@@ -613,8 +655,11 @@
             
             // Validate form
             if (validateForm()) {
+                debugLog('Form validation passed');
+                
                 // Show loading spinner
                 document.getElementById('loadingSpinner').classList.add('show');
+                document.getElementById('loadingStatus').textContent = 'Validating form data...';
                 
                 // Get form data
                 const applicationData = {
@@ -647,61 +692,51 @@
                     userId: user.uid
                 };
                 
+                debugLog('Application data collected: ' + JSON.stringify(applicationData));
+                
                 // Generate application ID
                 const applicationId = 'BC' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + Math.floor(Math.random() * 1000);
+                debugLog('Generated application ID: ' + applicationId);
                 
-                // Get file references
-                const birthProofFile = document.getElementById('birthProof').files[0];
-                const addressProofFile = document.getElementById('addressProof').files[0];
+                // Update loading status
+                document.getElementById('loadingStatus').textContent = 'Saving application data...';
                 
-                // Create storage references
-                const birthProofRef = storage.ref('birthCertificates/' + user.uid + '/' + applicationId + '/birthProof');
-                const addressProofRef = storage.ref('birthCertificates/' + user.uid + '/' + applicationId + '/addressProof');
-                
-                // Upload files and save application data
-                Promise.all([
-                    birthProofFile ? birthProofRef.put(birthProofFile) : Promise.resolve(null),
-                    addressProofFile ? addressProofRef.put(addressProofFile) : Promise.resolve(null)
-                ]).then(([birthProofSnapshot, addressProofSnapshot]) => {
-                    // Get download URLs
-                    return Promise.all([
-                        birthProofSnapshot ? birthProofSnapshot.ref.getDownloadURL() : Promise.resolve(null),
-                        addressProofSnapshot ? addressProofSnapshot.ref.getDownloadURL() : Promise.resolve(null)
-                    ]);
-                }).then(([birthProofUrl, addressProofUrl]) => {
-                    // Add document URLs to application data
-                    applicationData.documents = {
-                        birthProof: birthProofUrl,
-                        addressProof: addressProofUrl
-                    };
-                    
-                    // Save application data to Firebase
-                    return database.ref('birthCertificateApplications/' + user.uid + '/' + applicationId).set(applicationData);
-                }).then(() => {
-                    // Hide loading spinner
-                    document.getElementById('loadingSpinner').classList.remove('show');
-                    
-                    // Show success message
-                    showSuccessMessage('Birth Certificate application submitted successfully! Your application ID is ' + applicationId + '.');
-                    
-                    // Redirect to payment page after a short delay
-                    setTimeout(() => {
-                        window.location.href = 'payment.html?id=' + applicationId;
-                    }, 2000);
-                }).catch((error) => {
-                    console.error('Error submitting application:', error);
-                    
-                    // Hide loading spinner
-                    document.getElementById('loadingSpinner').classList.remove('show');
-                    
-                    // Show error message
-                    showErrorMessage('Error submitting application. Please try again.');
-                });
+                // Skip file upload for now and just save the form data
+                // This is to isolate the issue
+                database.ref('birthCertificateApplications/' + user.uid + '/' + applicationId).set(applicationData)
+                    .then(() => {
+                        debugLog('Application data saved successfully');
+                        
+                        // Hide loading spinner
+                        document.getElementById('loadingSpinner').classList.remove('show');
+                        
+                        // Show success message
+                        showSuccessMessage('Birth Certificate application submitted successfully! Your application ID is ' + applicationId + '.');
+                        
+                        // Redirect to payment page after a short delay
+                        setTimeout(() => {
+                            debugLog('Redirecting to payment page');
+                            window.location.href = 'payment.html?id=' + applicationId;
+                        }, 2000);
+                    })
+                    .catch((error) => {
+                        console.error('Error saving application data:', error);
+                        debugLog('Error saving application data: ' + error.message);
+                        
+                        // Hide loading spinner
+                        document.getElementById('loadingSpinner').classList.remove('show');
+                        
+                        // Show error message
+                        showErrorMessage('Error submitting application: ' + error.message);
+                    });
+            } else {
+                debugLog('Form validation failed');
             }
         });
         
         // Form validation function
         function validateForm() {
+            debugLog('Validating form');
             let isValid = true;
             const form = document.getElementById('birthCertificateForm');
             const inputs = form.querySelectorAll('input[required], select[required]');
@@ -727,6 +762,7 @@
                         errorMsg.style.display = 'block';
                     }
                     isValid = false;
+                    debugLog('Validation failed for field: ' + input.id);
                 }
                 
                 // Special validation for email
@@ -739,6 +775,7 @@
                             errorMsg.style.display = 'block';
                         }
                         isValid = false;
+                        debugLog('Email validation failed for: ' + input.value);
                     }
                 }
                 
@@ -751,6 +788,7 @@
                             errorMsg.style.display = 'block';
                         }
                         isValid = false;
+                        debugLog('Mobile number validation failed for: ' + input.value);
                     }
                 }
                 
@@ -763,6 +801,7 @@
                             errorMsg.style.display = 'block';
                         }
                         isValid = false;
+                        debugLog('PIN code validation failed for: ' + input.value);
                     }
                 }
             });
@@ -776,17 +815,20 @@
                     errorMsg.style.display = 'block';
                 }
                 isValid = false;
+                debugLog('Declaration checkbox not checked');
             }
             
             if (!isValid) {
                 showErrorMessage('Please fill all required fields correctly');
             }
             
+            debugLog('Form validation result: ' + isValid);
             return isValid;
         }
         
         // Show success message
         function showSuccessMessage(message) {
+            debugLog('Showing success message: ' + message);
             const successDiv = document.getElementById('successMessage');
             const successText = document.getElementById('successText');
             
@@ -800,6 +842,7 @@
         
         // Show error message
         function showErrorMessage(message) {
+            debugLog('Showing error message: ' + message);
             const errorDiv = document.getElementById('errorMessage');
             const errorText = document.getElementById('errorText');
             
@@ -862,6 +905,25 @@
                     uploadDiv.querySelector('p').textContent = `File selected: ${this.files[0].name}`;
                 }
             });
+        });
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            debugLog('Page loaded');
+            
+            // Check if Firebase is properly initialized
+            if (firebase.apps.length > 0) {
+                debugLog('Firebase initialized successfully');
+            } else {
+                debugLog('Firebase initialization failed');
+            }
+            
+            // Check if user is logged in
+            if (auth.currentUser) {
+                debugLog('User already logged in: ' + auth.currentUser.email);
+            } else {
+                debugLog('User not logged in');
+            }
         });
     </script>
 </body>
